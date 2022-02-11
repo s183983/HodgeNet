@@ -1,4 +1,4 @@
-name: HodgeNet
+name: Hodge
 channels:
   - pytorch
   - conda-forge
