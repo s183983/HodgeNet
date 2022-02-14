@@ -1,4 +1,4 @@
-name: Hodge
+name: hodge
 channels:
   - pytorch
   - conda-forge
