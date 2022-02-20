@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 from hodgenet import HodgeNetModel
 from meshdata import HodgenetMeshDataset
-
+root = 'C:/Users/lakri/Desktop/DTU/8.Semester/Special_geo/BU_3DFE_3DHeatmaps_crop/'
 
 def main(args):
     torch.set_default_dtype(torch.float64)  # needed for eigenvalue problems
@@ -23,16 +23,27 @@ def main(args):
     seg_files_train = []
     mesh_files_val = []
     seg_files_val = []
+    
+    t_files = os.listdir(root+'train')
+    v_files = os.listdir(root+'val')
+    
+    for t_file in t_files:
+        mesh_files_train.append(os.path.join(args.mesh_path, t_file))
+        seg_files_train.append(os.path.join(args.seg_path, t_file))
+    
+    for v_file in v_files:
+        mesh_files_train.append(os.path.join(args.mesh_path, v_file))
+        seg_files_train.append(os.path.join(args.seg_path, v_file))
 
-    files = sorted([f.split('.')[0] for f in os.listdir(args.mesh_path)])
-    cutoff = round(0.85 * len(files) + 0.49)
+    #files = sorted([f.split('.')[0] for f in os.listdir(args.mesh_path)])
+    #cutoff = round(0.85 * len(files) + 0.49)
 
-    for i in files[:cutoff]:
-        mesh_files_train.append(os.path.join(args.mesh_path, f'{i}.off'))
-        seg_files_train.append(os.path.join(args.seg_path, f'{i}.seg'))
-    for i in files[cutoff:]:
-        mesh_files_val.append(os.path.join(args.mesh_path, f'{i}.off'))
-        seg_files_val.append(os.path.join(args.seg_path, f'{i}.seg'))
+    #for i in files[:cutoff]:
+        #mesh_files_train.append(os.path.join(args.mesh_path, f'{i}.off'))
+        #seg_files_train.append(os.path.join(args.seg_path, f'{i}.seg'))
+    #for i in files[cutoff:]:
+        #mesh_files_val.append(os.path.join(args.mesh_path, f'{i}.off'))
+        #seg_files_val.append(os.path.join(args.seg_path, f'{i}.seg'))
 
     features = ['vertices'] if args.no_normals else ['vertices', 'normals']
 

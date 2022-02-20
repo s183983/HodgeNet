@@ -3,8 +3,9 @@ import numpy as np
 import scipy
 import scipy.io
 import torch
-import trimesh
-
+#import trimesh
+import vtk
+from vtk.numpy_interface import dataset_adapter as dsa
 
 def random_rotation_matrix():
     """Generate a random 3D rotation matrix."""
@@ -79,8 +80,15 @@ class HodgenetMeshDataset(torch.utils.data.Dataset):
         return len(self.mesh_files)
 
     def __getitem__(self, idx):
-        mesh = trimesh.load(self.mesh_files[idx], process=False)
-        v_orig, f_orig = mesh.vertices, mesh.faces
+        #mesh = trimesh.load(self.mesh_files[idx], process=False)
+        #v_orig, f_orig = mesh.vertices, mesh.faces
+        reader = vtk.vtkPolyDataReader()
+        reader.SetFileName(self.mesh_files[idx])
+        reader.Update()
+        v_orig = np.array(reader.GetOutput().GetPoints().GetData())
+        poly = np.array(dsa.WrapDataObject(reader.GetOutput()).Polygons)
+        f_orig = np.reshape(poly,[int((len(poly)/3)),3])
+
 
         if self.segmentation_files is not None:
             face_segmentation = np.loadtxt(self.segmentation_files[idx],
