@@ -51,7 +51,7 @@ class HodgenetMeshDataset(torch.utils.data.Dataset):
                  edge_features_from_vertex_features=['vertices'],
                  triangle_features_from_vertex_features=['vertices'],
                  center_vertices=True, normalize_coords=True,
-                 segmentation_files=None):
+                 segmentation_files=None, lm_ids = 0):
         self.mesh_files = mesh_files
         self.mesh_features = mesh_features
         self.decimate_range = decimate_range
@@ -65,8 +65,10 @@ class HodgenetMeshDataset(torch.utils.data.Dataset):
         self.segmentation_files = segmentation_files
         self.normalize_coords = normalize_coords
 
-        self.min_category = float('inf')
-        self.n_seg_categories = 0
+        self.min_category = 0 #float('inf')
+        self.n_seg_categories = 2
+        self.lm_ids = lm_ids
+        """
         if self.segmentation_files is not None:
             for f in segmentation_files:
                 triangle_data = np.loadtxt(f, dtype=np.int64)
@@ -75,6 +77,7 @@ class HodgenetMeshDataset(torch.utils.data.Dataset):
                 self.min_category = min(self.min_category, triangle_data.min())
 
             self.n_seg_categories = self.n_seg_categories-self.min_category+1
+            """
 
     def __len__(self):
         return len(self.mesh_files)
@@ -87,13 +90,15 @@ class HodgenetMeshDataset(torch.utils.data.Dataset):
         reader.Update()
         v_orig = np.array(reader.GetOutput().GetPoints().GetData())
         poly = np.array(dsa.WrapDataObject(reader.GetOutput()).Polygons)
-        f_orig = np.reshape(poly,[int((len(poly)/3)),3])
+        f_orig = np.reshape(poly,(-1,4))[:,1:4]
 
 
         if self.segmentation_files is not None:
+            face_segmentation = self.load_label(self.segmentation_files[idx], f_orig)
+            """
             face_segmentation = np.loadtxt(self.segmentation_files[idx],
                                            dtype=int)
-            face_segmentation -= self.min_category
+            face_segmentation -= self.min_category"""
 
         # decimate mesh to desired number of faces in provided range
         if self.decimate_range is not None:
@@ -161,7 +166,7 @@ class HodgenetMeshDataset(torch.utils.data.Dataset):
         }
 
         if self.segmentation_files is not None:
-            result['segmentation'] = torch.from_numpy(face_segmentation)
+            result['segmentation'] = torch.from_numpy(face_segmentation).long()
         if bdry_idxs.sum() > 0:
             result['bdry_d01'] = d01(v, bdry_ev)
 
@@ -199,6 +204,13 @@ class HodgenetMeshDataset(torch.utils.data.Dataset):
                 axis=1))
 
         return result
+    
+    def load_label(self, file_name, faces):
+        label = np.load(file_name)
+        point_label = label[self.lm_ids]
+        face_labels = point_label[faces].sum(axis=1)/3
+        face_labels = face_labels>0.4
+        return face_labels.astype(float)
 
 
 def get_rot(theta):

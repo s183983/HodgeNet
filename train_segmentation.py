@@ -1,6 +1,7 @@
 import argparse
 import datetime
 import os
+import glob
 
 import numpy as np
 import torch
@@ -9,21 +10,29 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
+import wandb
+
+wandb.init(project="Hodgenet", entity="s183983")
 
 from hodgenet import HodgeNetModel
 from meshdata import HodgenetMeshDataset
-root = 'C:/Users/lakri/Desktop/DTU/8.Semester/Special_geo/BU_3DFE_3DHeatmaps_crop/'
+root = 'C:/Users/lowes/OneDrive/Skrivebord/DTU/8_Semester/Advaced_Geometric_DL/BU_3DFE_3DHeatmaps_crop/'
+
 
 def main(args):
     torch.set_default_dtype(torch.float64)  # needed for eigenvalue problems
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
 
-    mesh_files_train = []
+    mesh_files_train = glob.glob(os.path.join(root,"train","*.vtk"))
     seg_files_train = []
-    mesh_files_val = []
+    mesh_files_val = glob.glob(os.path.join(root,"val","*.vtk"))
     seg_files_val = []
-    
+    seg_files_train = [os.path.join(root,"labels",'_'.join(os.path.basename(file).split('_')[0:2])+".npy")
+                       for file in mesh_files_train]
+    seg_files_val = [os.path.join(root,"labels",'_'.join(os.path.basename(file).split('_')[0:2])+".npy")
+                     for file in mesh_files_val]
+    """
     t_files = os.listdir(root+'train')
     v_files = os.listdir(root+'val')
     
@@ -34,7 +43,7 @@ def main(args):
     for v_file in v_files:
         mesh_files_train.append(os.path.join(args.mesh_path, v_file))
         seg_files_train.append(os.path.join(args.seg_path, v_file))
-
+    """
     #files = sorted([f.split('.')[0] for f in os.listdir(args.mesh_path)])
     #cutoff = round(0.85 * len(files) + 0.49)
 
@@ -54,14 +63,16 @@ def main(args):
         triangle_features_from_vertex_features=features,
         max_stretch=0 if args.fine_tune is not None else 0.05,
         random_rotation=False, segmentation_files=seg_files_train,
-        normalize_coords=True)
+        normalize_coords=True,
+        lm_ids = args.lm_ids)
 
     validation = HodgenetMeshDataset(
         mesh_files_val, decimate_range=None,
         edge_features_from_vertex_features=features,
         triangle_features_from_vertex_features=features, max_stretch=0,
         random_rotation=False, segmentation_files=seg_files_val,
-        normalize_coords=True)
+        normalize_coords=True,
+        lm_ids = args.lm_ids)
 
     def mycollate(b): return b
     dataloader = DataLoader(dataset, batch_size=args.bs,
@@ -131,10 +142,19 @@ def main(args):
             for mesh, seg_estimate in zip(batch, seg_estimates):
                 gt_segs = mesh['segmentation'].squeeze(-1)
                 areas = mesh['areas']
-                batch_loss += loss(seg_estimate, gt_segs)
-                batch_acc += (seg_estimate.argmax(1) == gt_segs).float().mean()
-                batch_acc_weighted += ((seg_estimate.argmax(1) == gt_segs)
-                                       * areas).sum() / areas.sum()
+                ll = loss(seg_estimate, gt_segs)
+                acc = (seg_estimate.argmax(1) == gt_segs).float().mean()
+                acc_w =  ((seg_estimate.argmax(1) == gt_segs) * areas).sum() / areas.sum()
+                batch_loss +=ll
+                batch_acc += acc
+                batch_acc_weighted += acc_w
+                
+                wandb.log({"loss": ll,
+                           "accuracy": acc,
+                           "accuracy_w": acc_w})
+
+                # Optional
+                wandb.watch(model)
 
             epoch_loss += batch_loss.item()
             epoch_acc += batch_acc.item()
@@ -182,14 +202,18 @@ def main(args):
             }, os.path.join(args.out,
                             f'{epoch}_finetune.pth'
                             if args.fine_tune is not None else f'{epoch}.pth'))
-
+                            
+    model.eval()
+    with torch.no_grad():
+        epoch_loop(validationloader, 'Test',
+                   epoch, val_writer, optimize=False)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--out', type=str, default='out/vase')
-    parser.add_argument('--mesh_path', type=str, default='data/coseg_vase')
-    parser.add_argument('--seg_path', type=str, default='data/coseg_vase_gt')
-    parser.add_argument('--bs', type=int, default=16)
+    parser.add_argument('--mesh_path', type=str, default='BU_3DFE_3DHeatmaps_crop')
+    parser.add_argument('--seg_path', type=str, default='data/BU_3DFE_3DHeatmaps_crop')
+    parser.add_argument('--bs', type=int, default=1)
     parser.add_argument('--lr', type=float, default=1e-4)
     parser.add_argument('--n_epochs', type=int, default=100)
     parser.add_argument('--n_eig', type=int, default=32)
@@ -200,6 +224,14 @@ if __name__ == '__main__':
     parser.add_argument('--num_vector_dimensions', type=int, default=4)
     parser.add_argument('--seed', type=int, default=123)
     parser.add_argument('--no_normals', action='store_true', default=False)
+    parser.add_argument('--lm_ids', action='store_true', default=0)
+    
 
     args = parser.parse_args()
-    main(args)
+    wandb.config = {
+      "learning_rate": args.lr,
+      "epochs": args.n_epochs,
+      "batch_size": args.bs,
+      "lm_ids": args.lm_ids
+    }
+    main(args)  
