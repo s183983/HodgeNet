@@ -25,13 +25,14 @@ def main(args):
     np.random.seed(args.seed)
 
     mesh_files_train = glob.glob(os.path.join(root,"train","*.vtk"))
-    seg_files_train = []
     mesh_files_val = glob.glob(os.path.join(root,"val","*.vtk"))
-    seg_files_val = []
     seg_files_train = [os.path.join(root,"labels",'_'.join(os.path.basename(file).split('_')[0:2])+".npy")
                        for file in mesh_files_train]
     seg_files_val = [os.path.join(root,"labels",'_'.join(os.path.basename(file).split('_')[0:2])+".npy")
                      for file in mesh_files_val]
+    mesh_files_test = glob.glob(os.path.join(root,"test","*.vtk"))
+    seg_files_test = [os.path.join(root,"labels",'_'.join(os.path.basename(file).split('_')[0:2])+".npy")
+                       for file in mesh_files_train]
     """
     t_files = os.listdir(root+'train')
     v_files = os.listdir(root+'val')
@@ -71,6 +72,14 @@ def main(args):
         edge_features_from_vertex_features=features,
         triangle_features_from_vertex_features=features, max_stretch=0,
         random_rotation=False, segmentation_files=seg_files_val,
+        normalize_coords=True,
+        lm_ids = args.lm_ids)
+    
+    test_set = HodgenetMeshDataset(
+        mesh_files_test, decimate_range=None,
+        edge_features_from_vertex_features=features,
+        triangle_features_from_vertex_features=features, max_stretch=0,
+        random_rotation=False, segmentation_files=seg_files_test,
         normalize_coords=True,
         lm_ids = args.lm_ids)
 
