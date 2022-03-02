@@ -66,7 +66,7 @@ def main(args):
     print("Found",len(mesh_files_test),"test files")
     dataset = HodgenetMeshDataset(
         mesh_files_train,
-        decimate_range=None if args.fine_tune is not None else (1000, 99999),
+        decimate_range=None,# if args.fine_tune is not None else (1000, 99999),
         edge_features_from_vertex_features=features,
         triangle_features_from_vertex_features=features,
         max_stretch=0 if args.fine_tune is not None else 0.05,
