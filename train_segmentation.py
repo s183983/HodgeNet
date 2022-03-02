@@ -61,7 +61,9 @@ def main(args):
         #seg_files_val.append(os.path.join(args.seg_path, f'{i}.seg'))
 
     features = ['vertices'] if args.no_normals else ['vertices', 'normals']
-
+    print("Found",len(mesh_files_train),"training files")
+    print("Found",len(mesh_files_val),"validation files")
+    print("Found",len(mesh_files_test),"test files")
     dataset = HodgenetMeshDataset(
         mesh_files_train,
         decimate_range=None if args.fine_tune is not None else (1000, 99999),
