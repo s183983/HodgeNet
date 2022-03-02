@@ -1,0 +1,22 @@
+{
+    "os": "Windows-10-10.0.22000-SP0",
+    "python": "3.8.8",
+    "heartbeatAt": "2022-03-02T11:17:46.859151",
+    "startedAt": "2022-03-02T11:17:44.849417",
+    "docker": null,
+    "cpu_count": 12,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "program": "C:\\Users\\lowes\\OneDrive\\Skrivebord\\DTU\\8_semester\\Advaced_Geometric_DL\\HodgeNet\\train_segmentation.py",
+    "codePath": "train_segmentation.py",
+    "git": {
+        "remote": "https://github.com/s183983/HodgeNet.git",
+        "commit": "717ac36c3dca2349b585e9aa360766509869f015"
+    },
+    "email": "s183983@student.dtu.dk",
+    "root": "C:/Users/lowes/OneDrive/Skrivebord/DTU/8_semester/Advaced_Geometric_DL/HodgeNet",
+    "host": "MSI",
+    "username": "lowes",
+    "executable": "C:\\Users\\lowes\\anaconda3\\python.exe"
+}

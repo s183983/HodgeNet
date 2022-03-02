@@ -22,7 +22,7 @@ root = 'C:/Users/lowes/OneDrive/Skrivebord/DTU/8_Semester/Advaced_Geometric_DL/B
 if platform == "win32":
     root = 'C:/Users/lowes/OneDrive/Skrivebord/DTU/8_Semester/Advaced_Geometric_DL/BU_3DFE_3DHeatmaps_crop/'
 else:
-    root = "/scratch/s183983/data/"
+    root = "/scratch/s183983/data_cropped/"
     
 def main(args):
     torch.set_default_dtype(torch.float64)  # needed for eigenvalue problems
