@@ -2,6 +2,7 @@ import argparse
 import datetime
 import os
 import glob
+from sys import platform
 
 import numpy as np
 import torch
@@ -18,7 +19,11 @@ from hodgenet import HodgeNetModel
 from meshdata import HodgenetMeshDataset
 root = 'C:/Users/lowes/OneDrive/Skrivebord/DTU/8_Semester/Advaced_Geometric_DL/BU_3DFE_3DHeatmaps_crop/'
 
-
+if platform == "win32":
+    root = 'C:/Users/lowes/OneDrive/Skrivebord/DTU/8_Semester/Advaced_Geometric_DL/BU_3DFE_3DHeatmaps_crop/'
+else:
+    root = "/scratch/s183983/data/"
+    
 def main(args):
     torch.set_default_dtype(torch.float64)  # needed for eigenvalue problems
     torch.manual_seed(args.seed)
@@ -90,7 +95,10 @@ def main(args):
     validationloader = DataLoader(validation, batch_size=args.bs,
                                   num_workers=args.num_workers,
                                   collate_fn=mycollate)
-
+    test_loader = DataLoader(test_set, batch_size=args.bs,
+                                  num_workers=args.num_workers,
+                                  collate_fn=mycollate)
+    
     example = dataset[0]
     hodgenet = HodgeNetModel(
         example['int_edge_features'].shape[1],
@@ -214,26 +222,26 @@ def main(args):
                             
     model.eval()
     with torch.no_grad():
-        epoch_loop(validationloader, 'Test',
+        epoch_loop(test_loader, 'Test',
                    epoch, val_writer, optimize=False)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--out', type=str, default='out/vase')
+    parser.add_argument('--out', type=str, default='out')
     parser.add_argument('--mesh_path', type=str, default='BU_3DFE_3DHeatmaps_crop')
     parser.add_argument('--seg_path', type=str, default='data/BU_3DFE_3DHeatmaps_crop')
-    parser.add_argument('--bs', type=int, default=1)
+    parser.add_argument('--bs', type=int, default=12)
     parser.add_argument('--lr', type=float, default=1e-4)
     parser.add_argument('--n_epochs', type=int, default=100)
     parser.add_argument('--n_eig', type=int, default=32)
     parser.add_argument('--n_extra_eig', type=int, default=32)
     parser.add_argument('--n_out_features', type=int, default=32)
     parser.add_argument('--fine_tune', type=str, default=None)
-    parser.add_argument('--num_workers', type=int, default=0)
+    parser.add_argument('--num_workers', type=int, default=6)
     parser.add_argument('--num_vector_dimensions', type=int, default=4)
     parser.add_argument('--seed', type=int, default=123)
     parser.add_argument('--no_normals', action='store_true', default=False)
-    parser.add_argument('--lm_ids', action='store_true', default=0)
+    parser.add_argument('--lm_ids', type=int, default=0)
     
 
     args = parser.parse_args()
