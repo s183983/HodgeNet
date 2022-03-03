@@ -13,18 +13,19 @@ from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 import wandb
 
-wandb.init(project="Hodgenet", entity="s183983")
+
 
 from hodgenet import HodgeNetModel
 from meshdata import HodgenetMeshDataset
-root = 'C:/Users/lowes/OneDrive/Skrivebord/DTU/8_Semester/Advaced_Geometric_DL/BU_3DFE_3DHeatmaps_crop/'
 
-if platform == "win32":
-    root = 'C:/Users/lowes/OneDrive/Skrivebord/DTU/8_Semester/Advaced_Geometric_DL/BU_3DFE_3DHeatmaps_crop/'
-else:
-    root = "/scratch/s183983/data_cropped/"
+
+
     
 def main(args):
+    if platform == "win32":
+        root = 'C:/Users/lowes/OneDrive/Skrivebord/DTU/8_Semester/Advaced_Geometric_DL/BU_3DFE_3DHeatmaps_crop_2/'
+    else:
+        root = "/scratch/s183983/data_cropped/"
     torch.set_default_dtype(torch.float64)  # needed for eigenvalue problems
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
@@ -232,21 +233,22 @@ if __name__ == '__main__':
     parser.add_argument('--out', type=str, default='out')
     parser.add_argument('--mesh_path', type=str, default='BU_3DFE_3DHeatmaps_crop')
     parser.add_argument('--seg_path', type=str, default='data/BU_3DFE_3DHeatmaps_crop')
-    parser.add_argument('--bs', type=int, default=12)
+    parser.add_argument('--bs', type=int, default=3)
     parser.add_argument('--lr', type=float, default=1e-4)
     parser.add_argument('--n_epochs', type=int, default=100)
     parser.add_argument('--n_eig', type=int, default=32)
     parser.add_argument('--n_extra_eig', type=int, default=32)
     parser.add_argument('--n_out_features', type=int, default=32)
     parser.add_argument('--fine_tune', type=str, default=None)
-    parser.add_argument('--num_workers', type=int, default=6)
+    parser.add_argument('--num_workers', type=int, default=0)
     parser.add_argument('--num_vector_dimensions', type=int, default=4)
     parser.add_argument('--seed', type=int, default=123)
     parser.add_argument('--no_normals', action='store_true', default=False)
     parser.add_argument('--lm_ids', type=int, default=0)
     
-
+    
     args = parser.parse_args()
+    wandb.init(project="Hodgenet", entity="s183983")
     wandb.config = {
       "learning_rate": args.lr,
       "epochs": args.n_epochs,
