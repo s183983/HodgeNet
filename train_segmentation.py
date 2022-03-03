@@ -3,6 +3,7 @@ import datetime
 import os
 import glob
 from sys import platform
+os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
 import numpy as np
 import torch
@@ -150,7 +151,7 @@ def main(args):
 
     def epoch_loop(dataloader, epochname, epochnum, writer, optimize=True):
         epoch_loss, epoch_acc, epoch_acc_weighted, epoch_size = 0, 0, 0, 0
-        pbar = tqdm(total=len(dataloader), desc=f'{epochname} {epochnum}')
+        #pbar = tqdm(total=len(dataloader), desc=f'{epochname} {epochnum}')
         for batch in dataloader:
             if optimize:
                 optimizer.zero_grad()
@@ -184,13 +185,13 @@ def main(args):
             batch_loss /= len(batch)
             batch_acc /= len(batch)
             batch_acc_weighted /= len(batch)
-
-            pbar.set_postfix({
-                'loss': batch_loss.item(),
-                'accuracy': batch_acc.item(),
-                'accuracy_weighted': batch_acc_weighted.item(),
-            })
-            pbar.update(1)
+            print("batch_loss", batch_loss)
+            # pbar.set_postfix({
+            #     'loss': batch_loss.item(),
+            #     'accuracy': batch_acc.item(),
+            #     'accuracy_weighted': batch_acc_weighted.item(),
+            # })
+            # pbar.update(1)
 
             if optimize:
                 batch_loss.backward()
@@ -202,7 +203,7 @@ def main(args):
         writer.add_scalar('accuracy_weighted',
                           epoch_acc_weighted / epoch_size, epochnum)
 
-        pbar.close()
+        # pbar.close()
 
     for epoch in range(starting_epoch, starting_epoch+args.n_epochs+1):
         model.train()
